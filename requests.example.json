@@ -1,0 +1,31 @@
+{
+    "namespace": {
+        "url": {
+            "PROD": "https://example.com/api",
+            "DEV": "https://dev.example.com/api",
+            "LOCAL": "http://localhost:8000/api"
+        },
+        "requests": {
+            "request_name": {
+                "endpoint": "endpoint",
+                "method": "POST",
+                "parameters": {
+                    "paramName": "paramValue"
+                },
+                "headers": {
+                    "Accept": "application/json",
+                    "ContentType": "application/json",
+                    "X-Custom-Header": "Custom Header"
+                },
+                "basicAuth": {
+                    "username": "user",
+                    "password": "password"
+                },
+                "body": {
+                    "id": 1,
+                    "attr": "value"
+                }
+            }
+        }
+    }
+}

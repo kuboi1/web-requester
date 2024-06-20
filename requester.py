@@ -106,8 +106,18 @@ class Requester:
         end_time = time.time()
 
         # Save the response
+        content_type = response.headers['Content-Type']
         datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        with open(f'responses/{datetime_str}_{self.namespace}_{request_name}.json', 'wb') as response_f:
+
+        match content_type:
+            case 'application/json':
+                ext = 'json'
+            case 'application/pdf':
+                ext = 'pdf'
+            case _:
+                ext = 'txt'
+
+        with open(f'responses/{datetime_str}_{self.namespace}_{request_name}.{ext}', 'wb') as response_f:
             response_f.write(response.content)
 
         status = response.status_code

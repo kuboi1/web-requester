@@ -110,12 +110,10 @@ class Requester:
         datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
         match content_type:
-            case 'application/json':
-                ext = 'json'
             case 'application/pdf':
                 ext = 'pdf'
             case _:
-                ext = 'txt'
+                ext = 'json'
 
         with open(f'responses/{datetime_str}_{self.namespace}_{request_name}.{ext}', 'wb') as response_f:
             response_f.write(response.content)

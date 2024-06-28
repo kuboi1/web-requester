@@ -11,8 +11,8 @@
 * Each request has it's own name
 
 ### Responses
-* Whatever json body content is returned is saved into a .json file
-* The responses are saved into the responses/ directory in *<datetime\>\_<namepsace\>\_<request_name>* format
+* Requester currently supports json and pdf responses
+* The responses are saved into the responses/ directory in *<datetime\>\_<namepsace\>\_<request_name>.<ext\>* format
 
 ### Settings
 * Settings are specified in a **settings.json** file

@@ -54,13 +54,18 @@ class Requester:
         method = request['method']
         headers = request['headers']
 
+        id = request['id'] if 'id' in request else None
         params = request['parameters'] if 'parameters' in request else None
         body = request['body'] if 'body' in request else None
         basicAuth = request['basicAuth'] if 'basicAuth' in request else None
 
         #Send the request
+        target_link = f'{target_link}/{id}' if id is not None else target_link
+
+        url_params = '?' + '&'.join([f'{key}={params[key]}' for key in params]) if params != None else ''
+
         print()
-        print(f'Sending {method} request {request_name} to: {target_link}...')
+        print(f'Sending {method} request {request_name} to: {target_link}{url_params}...')
 
         start_time = time.time()
 

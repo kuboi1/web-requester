@@ -1,3 +1,4 @@
-requests.json
 response.json
 settings.json
+requests/*
+!requests/namespace.json.example

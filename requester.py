@@ -1,6 +1,7 @@
 import requests
 import time
 import json
+import os
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
@@ -15,6 +16,9 @@ COLOR_ERR = '\033[31m'      # Red
 COLOR_WAR = '\033[33m'      # Yellow
 COLOR_DEFAULT = '\033[0m'   # White (reset)
 
+BASE_PATH = os.path.abspath(os.path.dirname(__file__))
+REQUESTS_PATH = os.path.join(BASE_PATH, 'requests')
+
 
 class Requester:
     namespace: str
@@ -24,28 +28,72 @@ class Requester:
     request_time: int
 
     def __init__(self, settings: dict) -> None:
-        self._load_requests(settings['mode'], settings['namespace'])
+        self._print_intro()
 
-    def _load_requests(self, mode: str, namespace: str) -> dict:
-        with open('requests.json', 'r', encoding='utf-8') as requests_f:
-            data = json.load(requests_f)
+        namespaces = self._get_namespaces()
 
-        if namespace not in data:
-            print(f'{COLOR_ERR}Invalid namespace \'{namespace}\'{COLOR_DEFAULT}')
+        if len(namespaces) == 0:
+            print(f'{COLOR_ERR}No valid request json files found at \'{REQUESTS_PATH}\'{COLOR_DEFAULT}')
+            exit()
+        
+        self.namespace = settings['namespace'] if 'namespace' in settings else self._pick_namespace(namespaces)
+
+        self._load_requests(settings['mode'])
+    
+    def _get_namespaces(self) -> dict:
+        namespaces = {}
+        for i, file in enumerate(os.listdir(REQUESTS_PATH)):
+            if file.endswith('example'):
+                continue
+            namespaces[i - 1] = file.split(".")[0]
+        
+        return namespaces
+    
+    def _pick_namespace(self, namespaces: dict) -> str:
+        for i in namespaces:
+            print(f' > {i}: {namespaces[i]}')
+        
+        print()
+        print(' > q: QUIT')
+        print()
+        
+        while True:
+            namespace_num = input('> Namespace number: ')
+
+            if namespace_num == 'q':
+                exit()
+
+            if not namespace_num.isnumeric():
+                print(f'{COLOR_WAR}Not a number{COLOR_DEFAULT}')
+                continue
+
+            namespace_num = int(namespace_num)
+
+            if namespace_num not in namespaces:
+                print(f'{COLOR_WAR}Invalid namespace number{COLOR_DEFAULT}')
+                continue
+
+            return namespaces[namespace_num]
+
+    def _load_requests(self, mode: str) -> dict:
+        if self.namespace not in self._get_namespaces().values():
+            print(f'{COLOR_ERR}Invalid namespace \'{self.namespace}\'{COLOR_DEFAULT}')
             exit()
         
         if mode not in [MODE_PRODUCTION, MODE_DEV, MODE_LOCAL]:
             print(f'{COLOR_ERR}Invalid mode \'{mode}\'{COLOR_DEFAULT}')
             exit()
         
-        if mode not in data[namespace]['url']:
-            print(f'{COLOR_ERR}Missing url for mode \'{mode}\'{COLOR_DEFAULT}')
+        with open(os.path.join(REQUESTS_PATH, f'{self.namespace}.json'), 'r') as f:
+            data = json.load(f)
+        
+        if mode not in data['url']:
+            print(f'{COLOR_ERR}Missing url for mode \'{mode}\' in namespace \'{self.namespace}\'{COLOR_DEFAULT}')
             exit()
         
-        self.namespace = namespace
         self.mode = mode
-        self.url = data[namespace]['url'][mode]
-        self.requests = data[namespace]['requests']
+        self.url = data['url'][mode]
+        self.requests = data['requests']
     
     def _send_request(self, request_name: str) -> Response:
         request = self.requests[request_name]
@@ -116,10 +164,11 @@ class Requester:
         with open(f'responses/{datetime_str}_{self.namespace}_{request_name}.{ext}', 'wb') as response_f:
             response_f.write(response.content)
 
-    def print_intro(self) -> None:
+    def _print_intro(self) -> None:
         print('---------')
         print('REQUESTER')
         print('---------')
+        print()
 
     def print_options(self) -> None:
         print(f'Requests for {self.namespace} in {self.mode} mode:')
@@ -159,8 +208,6 @@ def main() -> None:
     settings = load_settings()
 
     requester = Requester(settings)
-    
-    requester.print_intro()
 
     while True:
         print()

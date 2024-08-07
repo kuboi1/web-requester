@@ -60,9 +60,7 @@ class Requester:
         for i in namespaces:
             print(f' > {i}\t{COLOR_CYA}{namespaces[i]}{COLOR_DEFAULT}')
         
-        print()
-        print(f' > q\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
-        print()
+        self._print_quit_option()
         
         while True:
             namespace_num = input('> Namespace number: ')
@@ -180,19 +178,30 @@ class Requester:
         return file_path
 
     def _print_intro(self) -> None:
-        print('---------')
-        print('REQUESTER')
-        print('---------')
+        print('-------------------')
+        print('|  WEB REQUESTER  |')
+        print('-------------------')
+        print()
+    
+    def _print_quit_option(self) -> None:
+        print()
+        print(f' > q\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
         print()
 
     def print_options(self) -> None:
         print(f'Requests for {COLOR_CYA}{self.namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self.mode}{COLOR_DEFAULT} mode:')
         print()
         for i, name in enumerate(self.requests.keys()):
-            print(f' > {i}\t{COLOR_MAG}{self.requests[name]["method"]}{COLOR_DEFAULT} {COLOR_CYA}{name}{COLOR_DEFAULT} => {self.url}/{self.requests[name]["endpoint"]}')
-        print()
-        print(f' > q\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
-        print()
+            method = self.requests[name]['method']
+            endpoint = self.requests[name]['endpoint']
+            id = self.requests[name]['id'] if 'id' in self.requests[name] else None
+
+            option = f'{i}\t{COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{name}{COLOR_DEFAULT}'
+            url = f'{self.url}/{endpoint}{f"/{id}" if id is not None else ""}'
+
+            print(f' > {option} => {url}')
+        
+        self._print_quit_option()
 
     def request(self, number: str) -> None:
         request_name = list(self.requests.keys())[number]

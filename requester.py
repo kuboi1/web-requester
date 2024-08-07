@@ -36,6 +36,7 @@ class Requester:
             print(f'{COLOR_ERR}No valid request json files found at \'{REQUESTS_PATH}\'{COLOR_DEFAULT}')
             exit()
         
+        # Pick from available namespaces if namespace not specified in settings
         self.namespace = settings['namespace'] if 'namespace' in settings else self._pick_namespace(namespaces)
 
         self._load_requests(settings['mode'])

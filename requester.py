@@ -14,10 +14,13 @@ MODE_LOCAL = 'LOCAL'
 COLOR_OK = '\033[32m'       # Green
 COLOR_ERR = '\033[31m'      # Red
 COLOR_WAR = '\033[33m'      # Yellow
+COLOR_MAG = '\033[95m'      # Magenta
+COLOR_CYA = '\033[96m'     # Cyan
 COLOR_DEFAULT = '\033[0m'   # White (reset)
 
 BASE_PATH = os.path.abspath(os.path.dirname(__file__))
 REQUESTS_PATH = os.path.join(BASE_PATH, 'requests')
+RESPONSES_PATH = os.path.join(BASE_PATH, 'responses')
 
 
 class Requester:
@@ -51,11 +54,14 @@ class Requester:
         return namespaces
     
     def _pick_namespace(self, namespaces: dict) -> str:
+        print('Pick a namespace:')
+        print()
+
         for i in namespaces:
-            print(f' > {i}: {namespaces[i]}')
+            print(f' > {i}\t{COLOR_CYA}{namespaces[i]}{COLOR_DEFAULT}')
         
         print()
-        print(' > q: QUIT')
+        print(f' > q\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
         print()
         
         while True:
@@ -74,6 +80,8 @@ class Requester:
                 print(f'{COLOR_WAR}Invalid namespace number{COLOR_DEFAULT}')
                 continue
 
+            print()
+
             return namespaces[namespace_num]
 
     def _load_requests(self, mode: str) -> dict:
@@ -85,6 +93,7 @@ class Requester:
             print(f'{COLOR_ERR}Invalid mode \'{mode}\'{COLOR_DEFAULT}')
             exit()
         
+        # Load namespace requests data
         with open(os.path.join(REQUESTS_PATH, f'{self.namespace}.json'), 'r') as f:
             data = json.load(f)
         
@@ -114,7 +123,7 @@ class Requester:
         url_params = '?' + '&'.join([f'{key}={params[key]}' for key in params]) if params != None else ''
 
         print()
-        print(f'Sending {method} request {request_name} to: {target_link}{url_params}...')
+        print(f'Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {target_link}{url_params}...')
 
         start_time = time.time()
 
@@ -152,7 +161,7 @@ class Requester:
 
         return response
 
-    def _save_response(self, request_name: str, response: Response) -> None:
+    def _save_response(self, request_name: str, response: Response) -> str:
         content_type = response.headers['Content-Type']
         datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -161,9 +170,14 @@ class Requester:
                 ext = 'pdf'
             case _:
                 ext = 'json'
+        
+        file_name = f'{datetime_str}_{self.namespace}_{request_name}.{ext}'
+        file_path = os.path.join(RESPONSES_PATH, file_name)
 
-        with open(f'responses/{datetime_str}_{self.namespace}_{request_name}.{ext}', 'wb') as response_f:
+        with open(file_path, 'wb') as response_f:
             response_f.write(response.content)
+        
+        return file_path
 
     def _print_intro(self) -> None:
         print('---------')
@@ -172,11 +186,12 @@ class Requester:
         print()
 
     def print_options(self) -> None:
-        print(f'Requests for {self.namespace} in {self.mode} mode:')
-        for i, name in enumerate(self.requests.keys()):
-            print(f' > {i} {name}: {self.requests[name]["method"]} => {self.url}/{self.requests[name]["endpoint"]}')
+        print(f'Requests for {COLOR_CYA}{self.namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self.mode}{COLOR_DEFAULT} mode:')
         print()
-        print(' > q: QUIT')
+        for i, name in enumerate(self.requests.keys()):
+            print(f' > {i}\t{COLOR_MAG}{self.requests[name]["method"]}{COLOR_DEFAULT} {COLOR_CYA}{name}{COLOR_DEFAULT} => {self.url}/{self.requests[name]["endpoint"]}')
+        print()
+        print(f' > q\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
         print()
 
     def request(self, number: str) -> None:
@@ -184,7 +199,7 @@ class Requester:
 
         response = self._send_request(request_name)
 
-        self._save_response(request_name, response)
+        file_path = self._save_response(request_name, response)
         
         status = response.status_code
         reason = response.reason
@@ -198,6 +213,8 @@ class Requester:
             ms_color = COLOR_WAR
 
         print(f'Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{self.request_time} ms{COLOR_DEFAULT}')
+        print(f'Response file: {file_path}')
+        print()
 
 
 def load_settings() -> dict:
@@ -211,7 +228,6 @@ def main() -> None:
     requester = Requester(settings)
 
     while True:
-        print()
         requester.print_options()
 
         request_number = input('> Request number: ')

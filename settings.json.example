@@ -1,4 +1,5 @@
 {
     "mode": "PROD",
-    "namespace": "namespace"
+    "namespace": "namespace",
+    "contentOnly": false
 }

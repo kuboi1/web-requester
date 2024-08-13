@@ -27,11 +27,14 @@ class Requester:
     namespace: str
     mode: str
     url: str
+    settings: dict
     requests: dict
     common: dict
 
     def __init__(self, settings: dict) -> None:
         self._print_intro()
+
+        self.settings = settings
 
         namespaces = self._get_namespaces()
 
@@ -42,7 +45,7 @@ class Requester:
         # Pick from available namespaces if namespace not specified in settings
         self.namespace = settings['namespace'] if 'namespace' in settings else self._pick_namespace(namespaces)
 
-        self._load_requests(settings['mode'])
+        self._load_requests()
     
     def _get_namespaces(self) -> dict:
         namespaces = {}
@@ -82,10 +85,12 @@ class Requester:
 
             return namespaces[namespace_num]
 
-    def _load_requests(self, mode: str) -> dict:
+    def _load_requests(self) -> dict:
         if self.namespace not in self._get_namespaces().values():
             print(f'{COLOR_ERR}Invalid namespace \'{self.namespace}\'{COLOR_DEFAULT}')
             exit()
+        
+        mode = self.settings['mode']
         
         if mode not in [MODE_PRODUCTION, MODE_DEV, MODE_LOCAL]:
             print(f'{COLOR_ERR}Invalid mode \'{mode}\'{COLOR_DEFAULT}')
@@ -161,19 +166,31 @@ class Requester:
         content_type = response.headers['Content-Type']
         datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
+        file_name = f'{datetime_str}_{self.namespace}_{request_name}'
+
         match content_type:
             case 'application/pdf':
-                ext = 'pdf'
+                file_path = os.path.join(RESPONSES_PATH, f'{file_name}.pdf')
+                with open(file_path, 'wb') as response_f:
+                    response_f.write(response.content)
             case _:
-                ext = 'json'
-        
-        file_name = f'{datetime_str}_{self.namespace}_{request_name}.{ext}'
-        file_path = os.path.join(RESPONSES_PATH, file_name)
-
-        with open(file_path, 'wb') as response_f:
-            response_f.write(response.content)
+                file_path = os.path.join(RESPONSES_PATH, f'{file_name}.json')
+                response_data = self._create_json_response_data(response)
+                with open(file_path, 'w') as response_f:
+                    json.dump(response_data, response_f)
         
         return file_path
+    
+    def _create_json_response_data(self, response: Response) -> dict:
+        if 'contentOnly' in self.settings and self.settings['contentOnly']:
+            return response.json()
+        
+        return {
+            'status': response.status_code,
+            'reason': response.reason,
+            'headers': dict(response.headers),
+            'content': response.json()
+        }
 
     def _add_common(self, request: dict) -> dict:
         for key in self.common:
@@ -224,7 +241,7 @@ class Requester:
         reason = response.reason
         elapsed_ms = response.elapsed.total_seconds() * 1000
 
-        status_color = COLOR_OK if status == 200 else COLOR_ERR
+        status_color = COLOR_OK if response.ok else COLOR_ERR
         ms_color = COLOR_OK
 
         if elapsed_ms >= 20000:

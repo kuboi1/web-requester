@@ -28,6 +28,7 @@ class Requester:
     mode: str
     url: str
     requests: dict
+    common: dict
     request_time: int
 
     def __init__(self, settings: dict) -> None:
@@ -102,20 +103,24 @@ class Requester:
         self.mode = mode
         self.url = data['url'][mode]
         self.requests = data['requests']
+        self.common = data['common'] if 'common' in data else {}
     
     def _send_request(self, request_name: str) -> Response:
         request = self.requests[request_name]
 
+        # Add common request values
+        request = self._add_common(request)
+
         target_link = f'{self.url}/{request["endpoint"]}'
         method = request['method']
-        headers = request['headers']
 
+        headers = request['headers'] if 'headers' in request else None
         id = request['id'] if 'id' in request else None
         params = request['parameters'] if 'parameters' in request else None
         body = request['body'] if 'body' in request else None
         basicAuth = request['basicAuth'] if 'basicAuth' in request else None
 
-        #Send the request
+        # Send the request
         target_link = f'{target_link}/{id}' if id is not None else target_link
 
         url_params = '?' + '&'.join([f'{key}={params[key]}' for key in params]) if params != None else ''
@@ -176,6 +181,18 @@ class Requester:
             response_f.write(response.content)
         
         return file_path
+
+    def _add_common(self, request: dict) -> dict:
+        for key in self.common:
+            if key not in request:
+                request[key] = self.common[key]
+                continue
+
+            for subkey in self.common[key]:
+                if subkey not in request[key]:
+                    request[key][subkey] = self.common[key][subkey]
+        
+        return request
 
     def _print_intro(self) -> None:
         print('-------------------')

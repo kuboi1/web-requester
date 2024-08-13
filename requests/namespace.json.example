@@ -4,6 +4,18 @@
         "DEV": "https://dev.example.com/api",
         "LOCAL": "http://localhost:8000/api"
     },
+    "common": {
+        "parameters": {
+            "paramName": "paramValue"
+        },
+        "headers": {
+            "Api-Key": "key"
+        },
+        "basicAuth": {
+            "username": "user",
+            "password": "password"
+        }
+    },
     "requests": {
         "request_name": {
             "endpoint": "endpoint",

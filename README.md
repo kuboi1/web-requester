@@ -10,6 +10,7 @@
 * Each namespace has it's own json config file in format *{namespace}.json*
 * Example of such file is included in the repository (*requests/namespace.json.example*)
 * Each request has it's own name
+* The *"common"* values are sent with each request
 
 ### Responses
 * Requester currently supports *.json* and *.pdf* responses

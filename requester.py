@@ -29,7 +29,6 @@ class Requester:
     url: str
     requests: dict
     common: dict
-    request_time: int
 
     def __init__(self, settings: dict) -> None:
         self._print_intro()
@@ -128,8 +127,6 @@ class Requester:
         print()
         print(f'Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {target_link}{url_params}...')
 
-        start_time = time.time()
-
         match method:
             case 'GET':
                 response = requests.get(
@@ -157,10 +154,6 @@ class Requester:
             case _:
                 print(f'{COLOR_ERR}Unsupported method \'{method}\'{COLOR_DEFAULT}')
                 exit()
-
-        end_time = time.time()
-
-        self.request_time = (int) ((end_time - start_time) * 1000)
 
         return response
 
@@ -229,16 +222,17 @@ class Requester:
         
         status = response.status_code
         reason = response.reason
+        elapsed_ms = response.elapsed.total_seconds() * 1000
 
         status_color = COLOR_OK if status == 200 else COLOR_ERR
         ms_color = COLOR_OK
 
-        if self.request_time >= 20000:
+        if elapsed_ms >= 20000:
             ms_color = COLOR_ERR
-        elif self.request_time >= 5000:
+        elif elapsed_ms >= 5000:
             ms_color = COLOR_WAR
 
-        print(f'Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{self.request_time} ms{COLOR_DEFAULT}')
+        print(f'Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{elapsed_ms:.1f} ms{COLOR_DEFAULT}')
         print(f'Response file: {file_path}')
         print()
 

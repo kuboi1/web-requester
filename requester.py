@@ -166,15 +166,20 @@ class Requester:
         content_type = response.headers['Content-Type']
         datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-        file_name = f'{datetime_str}_{self.namespace}_{request_name}'
+        file_name = f'{request_name}_{datetime_str}'
+
+        # Create a response directory for the namespace if not exist
+        dir_path = (os.path.join(RESPONSES_PATH, self.namespace))
+        if not os.path.isdir(dir_path):
+            os.mkdir(dir_path)
 
         match content_type:
             case 'application/pdf':
-                file_path = os.path.join(RESPONSES_PATH, f'{file_name}.pdf')
+                file_path = os.path.join(dir_path, f'{file_name}.pdf')
                 with open(file_path, 'wb') as response_f:
                     response_f.write(response.content)
             case _:
-                file_path = os.path.join(RESPONSES_PATH, f'{file_name}.json')
+                file_path = os.path.join(dir_path, f'{file_name}.json')
                 response_data = self._create_json_response_data(response)
                 with open(file_path, 'w') as response_f:
                     json.dump(response_data, response_f)

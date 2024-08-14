@@ -18,8 +18,8 @@
     },
     "requests": {
         "request_name": {
-            "endpoint": "endpoint",
-            "method": "POST",
+            "endpoint": "endpoint [required]",
+            "method": "POST [required]",
             "id": 1256,
             "parameters": {
                 "paramName": "paramValue"
@@ -36,7 +36,8 @@
             "body": {
                 "id": 1,
                 "attr": "value"
-            }
+            },
+            "mode": "LOCAL"
         }
     }
 }

@@ -90,15 +90,11 @@ class Requester:
             print(f'{COLOR_ERR}Invalid namespace \'{self.namespace}\'{COLOR_DEFAULT}')
             exit()
         
-        mode = self.settings['mode']
-        
-        if mode not in [MODE_PRODUCTION, MODE_DEV, MODE_LOCAL]:
-            print(f'{COLOR_ERR}Invalid mode \'{mode}\'{COLOR_DEFAULT}')
-            exit()
-        
         # Load namespace requests data
         with open(os.path.join(REQUESTS_PATH, f'{self.namespace}.json'), 'r') as f:
             data = json.load(f)
+        
+        mode = self.settings['mode']
         
         if mode not in data['url']:
             print(f'{COLOR_ERR}Missing url for mode \'{mode}\' in namespace \'{self.namespace}\'{COLOR_DEFAULT}')
@@ -106,7 +102,7 @@ class Requester:
         
         self.mode = mode
         self.url = data['url'][mode]
-        self.requests = data['requests']
+        self.requests = {key: data['requests'][key] for key in data['requests'] if 'mode' not in data['requests'][key] or data['requests'][key]['mode'] == mode}
         self.common = data['common'] if 'common' in data else {}
     
     def _send_request(self, request_name: str) -> Response:
@@ -187,14 +183,20 @@ class Requester:
         return file_path
     
     def _create_json_response_data(self, response: Response) -> dict:
+        try:
+            response_content = response.json()
+        except requests.exceptions.JSONDecodeError:
+            print(f'{COLOR_WAR}Failed to json decode response content - using raw content instead{COLOR_DEFAULT}')
+            response_content = response.text
+
         if 'contentOnly' in self.settings and self.settings['contentOnly']:
-            return response.json()
+            return response_content
         
         return {
             'status': response.status_code,
             'reason': response.reason,
             'headers': dict(response.headers),
-            'content': response.json()
+            'content': response_content
         }
 
     def _add_common(self, request: dict) -> dict:

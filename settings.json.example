@@ -1,5 +1,6 @@
 {
     "mode": "PROD",
     "namespace": "namespace",
-    "contentOnly": false
+    "contentOnly": false,
+    "liveReload": true
 }

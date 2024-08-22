@@ -7,9 +7,6 @@ from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
 from datetime import datetime
 
-MODE_PRODUCTION = 'PROD'
-MODE_DEV = 'DEV'
-MODE_LOCAL = 'LOCAL'
 
 COLOR_OK = '\033[32m'       # Green
 COLOR_ERR = '\033[31m'      # Red
@@ -44,6 +41,11 @@ class Requester:
         
         # Pick from available namespaces if namespace not specified in settings
         self.namespace = settings['namespace'] if 'namespace' in settings else self._pick_namespace(namespaces)
+
+        # Validate namespace
+        if self.namespace not in self._get_namespaces().values():
+            print(f'{COLOR_ERR}Invalid namespace \'{self.namespace}\'{COLOR_DEFAULT}')
+            exit()
 
         self._load_requests()
     
@@ -85,11 +87,8 @@ class Requester:
 
             return namespaces[namespace_num]
 
+
     def _load_requests(self) -> dict:
-        if self.namespace not in self._get_namespaces().values():
-            print(f'{COLOR_ERR}Invalid namespace \'{self.namespace}\'{COLOR_DEFAULT}')
-            exit()
-        
         # Load namespace requests data
         with open(os.path.join(REQUESTS_PATH, f'{self.namespace}.json'), 'r') as f:
             data = json.load(f)
@@ -106,6 +105,10 @@ class Requester:
         self.common = data['common'] if 'common' in data else {}
     
     def _send_request(self, request_name: str) -> Response:
+        # Reload requests if liveReload is set to true
+        if 'liveReload' in self.settings and self.settings['liveReload']:
+            self._load_requests()
+
         request = self.requests[request_name]
 
         # Add common request values

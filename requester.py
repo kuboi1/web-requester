@@ -23,17 +23,17 @@ KEY_RELOAD = 'r'
 KEY_QUIT = 'q'
 
 class Requester:
-    namespace: str
-    mode: str
-    url: str
-    settings: dict
-    requests: dict
-    common: dict
+    _namespace: str
+    _mode: str
+    _url: str
+    _settings: dict
+    _requests: dict
+    _common: dict
 
     def __init__(self, settings: dict) -> None:
         self._print_intro()
 
-        self.settings = settings
+        self._settings = settings
 
         self._load_namespace()
         self._load_requests()
@@ -46,11 +46,11 @@ class Requester:
             exit()
         
         # Pick from available namespaces if namespace not specified in settings
-        self.namespace = self.settings['namespace'] if 'namespace' in self.settings else self._pick_namespace(namespaces)
+        self._namespace = self._settings['namespace'] if 'namespace' in self._settings else self._pick_namespace(namespaces)
 
         # Validate selected namespace
-        if self.namespace not in self._get_namespaces().values():
-            self._print_err(f'Invalid namespace \'{self.namespace}\'')
+        if self._namespace not in self._get_namespaces().values():
+            self._print_err(f'Invalid namespace \'{self._namespace}\'')
             exit()
 
     def _get_namespaces(self) -> dict:
@@ -94,27 +94,27 @@ class Requester:
 
     def _load_requests(self) -> dict:
         # Load namespace requests data
-        with open(os.path.join(REQUESTS_PATH, f'{self.namespace}.json'), 'r') as f:
+        with open(os.path.join(REQUESTS_PATH, f'{self._namespace}.json'), 'r') as f:
             data = json.load(f)
         
-        mode = self.settings['mode']
+        mode = self._settings['mode']
         
         if mode not in data['url']:
-            self._print_err(f'Missing url for mode \'{mode}\' in namespace \'{self.namespace}\'')
+            self._print_err(f'Missing url for mode \'{mode}\' in namespace \'{self._namespace}\'')
             exit()
         
-        self.mode = mode
-        self.url = data['url'][mode]
-        self.requests = {key: data['requests'][key] for key in data['requests'] if 'mode' not in data['requests'][key] or data['requests'][key]['mode'] == mode}
-        self.common = data['common'] if 'common' in data else {}
+        self._mode = mode
+        self._url = data['url'][mode]
+        self._requests = {key: data['requests'][key] for key in data['requests'] if 'mode' not in data['requests'][key] or data['requests'][key]['mode'] == mode}
+        self._common = data['common'] if 'common' in data else {}
 
     def _send_request(self, request_name: str) -> Response:
-        request = self.requests[request_name]
+        request = self._requests[request_name]
 
         # Add common request values
         request = self._add_common(request)
 
-        target_link = f'{self.url}/{request["endpoint"]}'
+        target_link = f'{self._url}/{request["endpoint"]}'
         method = request['method']
 
         headers = request['headers'] if 'headers' in request else None
@@ -168,7 +168,7 @@ class Requester:
         file_name = f'{request_name}_{datetime_str}'
 
         # Create a response directory for the namespace if not exist
-        dir_path = (os.path.join(RESPONSES_PATH, self.namespace))
+        dir_path = (os.path.join(RESPONSES_PATH, self._namespace))
         if not os.path.isdir(dir_path):
             os.mkdir(dir_path)
 
@@ -192,7 +192,7 @@ class Requester:
             self._print_war(f'Failed to json decode response content - using raw content instead')
             response_content = response.text
 
-        if 'contentOnly' in self.settings and self.settings['contentOnly']:
+        if 'contentOnly' in self._settings and self._settings['contentOnly']:
             return response_content
         
         return {
@@ -203,14 +203,14 @@ class Requester:
         }
 
     def _add_common(self, request: dict) -> dict:
-        for key in self.common:
+        for key in self._common:
             if key not in request:
-                request[key] = self.common[key]
+                request[key] = self._common[key]
                 continue
 
-            for subkey in self.common[key]:
+            for subkey in self._common[key]:
                 if subkey not in request[key]:
-                    request[key][subkey] = self.common[key][subkey]
+                    request[key][subkey] = self._common[key][subkey]
         
         return request
 
@@ -239,15 +239,15 @@ class Requester:
         self._print_result(message, COLOR_WAR)
 
     def _print_options(self) -> None:
-        print(f'Requests for {COLOR_CYA}{self.namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self.mode}{COLOR_DEFAULT} mode:')
+        print(f'Requests for {COLOR_CYA}{self._namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self._mode}{COLOR_DEFAULT} mode:')
         print()
-        for i, name in enumerate(self.requests.keys()):
-            method = self.requests[name]['method']
-            endpoint = self.requests[name]['endpoint']
-            id = self.requests[name]['id'] if 'id' in self.requests[name] else None
+        for i, name in enumerate(self._requests.keys()):
+            method = self._requests[name]['method']
+            endpoint = self._requests[name]['endpoint']
+            id = self._requests[name]['id'] if 'id' in self._requests[name] else None
 
             option = f'{i}\t{COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{name}{COLOR_DEFAULT}'
-            url = f'{self.url}/{endpoint}{f"/{id}" if id is not None else ""}'
+            url = f'{self._url}/{endpoint}{f"/{id}" if id is not None else ""}'
 
             print(f' > {option} => {url}')
         
@@ -261,13 +261,13 @@ class Requester:
             self._print_result('Data reloaded')
 
     def _request(self, number: str) -> None:
-        request_name = list(self.requests.keys())[number]
+        request_name = list(self._requests.keys())[number]
 
         # Reload requests if liveReload is set to true
-        if 'liveReload' in self.settings and self.settings['liveReload']:
+        if 'liveReload' in self._settings and self._settings['liveReload']:
             self._reload_data(print_info=False)
             # Check if the selected request is still valid
-            if not request_name in self.requests:
+            if not request_name in self._requests:
                 self._print_war(f'Request \'{request_name}\' is no longer valid')
                 return
 
@@ -287,6 +287,7 @@ class Requester:
         elif elapsed_ms >= 5000:
             ms_color = COLOR_WAR
 
+        print()
         print(f'Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{elapsed_ms:.1f} ms{COLOR_DEFAULT}')
         print(f'Response file: {file_path}')
         print()
@@ -310,7 +311,7 @@ class Requester:
             
             request_number = int(request_number)
 
-            if request_number < 0 or request_number >= len(self.requests):
+            if request_number < 0 or request_number >= len(self._requests):
                 self._print_war('Invalid request number')
                 continue
 

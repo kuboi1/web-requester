@@ -19,6 +19,8 @@ BASE_PATH = os.path.abspath(os.path.dirname(__file__))
 REQUESTS_PATH = os.path.join(BASE_PATH, 'requests')
 RESPONSES_PATH = os.path.join(BASE_PATH, 'responses')
 
+KEY_RELOAD = 'r'
+KEY_QUIT = 'q'
 
 class Requester:
     namespace: str
@@ -33,22 +35,24 @@ class Requester:
 
         self.settings = settings
 
+        self._load_namespace()
+        self._load_requests()
+    
+    def _load_namespace(self) -> None:
         namespaces = self._get_namespaces()
 
         if len(namespaces) == 0:
-            print(f'{COLOR_ERR}No valid request json files found at \'{REQUESTS_PATH}\'{COLOR_DEFAULT}')
+            self._print_err(f'No valid request json files found at \'{REQUESTS_PATH}\'')
             exit()
         
         # Pick from available namespaces if namespace not specified in settings
-        self.namespace = settings['namespace'] if 'namespace' in settings else self._pick_namespace(namespaces)
+        self.namespace = self.settings['namespace'] if 'namespace' in self.settings else self._pick_namespace(namespaces)
 
-        # Validate namespace
+        # Validate selected namespace
         if self.namespace not in self._get_namespaces().values():
-            print(f'{COLOR_ERR}Invalid namespace \'{self.namespace}\'{COLOR_DEFAULT}')
+            self._print_err(f'Invalid namespace \'{self.namespace}\'')
             exit()
 
-        self._load_requests()
-    
     def _get_namespaces(self) -> dict:
         namespaces = {}
         for i, file in enumerate(os.listdir(REQUESTS_PATH)):
@@ -65,28 +69,28 @@ class Requester:
         for i in namespaces:
             print(f' > {i}\t{COLOR_CYA}{namespaces[i]}{COLOR_DEFAULT}')
         
-        self._print_quit_option()
+        self._print_extra_options()
         
         while True:
             namespace_num = input('> Namespace number: ')
 
-            if namespace_num == 'q':
+            if namespace_num == KEY_RELOAD:
+                self._reload_data(print_info=True)
+
+            if namespace_num == KEY_QUIT:
                 exit()
 
             if not namespace_num.isnumeric():
-                print(f'{COLOR_WAR}Not a number{COLOR_DEFAULT}')
+                self._print_war('Not a number')
                 continue
 
             namespace_num = int(namespace_num)
 
             if namespace_num not in namespaces:
-                print(f'{COLOR_WAR}Invalid namespace number{COLOR_DEFAULT}')
+                self._print_war('Invalid namespace number')
                 continue
 
-            print()
-
             return namespaces[namespace_num]
-
 
     def _load_requests(self) -> dict:
         # Load namespace requests data
@@ -96,19 +100,15 @@ class Requester:
         mode = self.settings['mode']
         
         if mode not in data['url']:
-            print(f'{COLOR_ERR}Missing url for mode \'{mode}\' in namespace \'{self.namespace}\'{COLOR_DEFAULT}')
+            self._print_err(f'Missing url for mode \'{mode}\' in namespace \'{self.namespace}\'')
             exit()
         
         self.mode = mode
         self.url = data['url'][mode]
         self.requests = {key: data['requests'][key] for key in data['requests'] if 'mode' not in data['requests'][key] or data['requests'][key]['mode'] == mode}
         self.common = data['common'] if 'common' in data else {}
-    
-    def _send_request(self, request_name: str) -> Response:
-        # Reload requests if liveReload is set to true
-        if 'liveReload' in self.settings and self.settings['liveReload']:
-            self._load_requests()
 
+    def _send_request(self, request_name: str) -> Response:
         request = self.requests[request_name]
 
         # Add common request values
@@ -156,7 +156,7 @@ class Requester:
                     auth=HTTPBasicAuth(basicAuth['username'], basicAuth['password']) if basicAuth is not None else None
                 )
             case _:
-                print(f'{COLOR_ERR}Unsupported method \'{method}\'{COLOR_DEFAULT}')
+                self._print_err(f'Unsupported method \'{method}\'')
                 exit()
 
         return response
@@ -189,7 +189,7 @@ class Requester:
         try:
             response_content = response.json()
         except requests.exceptions.JSONDecodeError:
-            print(f'{COLOR_WAR}Failed to json decode response content - using raw content instead{COLOR_DEFAULT}')
+            self._print_war(f'Failed to json decode response content - using raw content instead')
             response_content = response.text
 
         if 'contentOnly' in self.settings and self.settings['contentOnly']:
@@ -215,17 +215,30 @@ class Requester:
         return request
 
     def _print_intro(self) -> None:
+        print()
         print('-------------------')
         print('|  WEB REQUESTER  |')
         print('-------------------')
         print()
     
-    def _print_quit_option(self) -> None:
+    def _print_extra_options(self) -> None:
         print()
-        print(f' > q\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
+        print(f' > {KEY_RELOAD}\t{COLOR_MAG}RELOAD{COLOR_DEFAULT}')
+        print(f' > {KEY_QUIT}\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
         print()
+    
+    def _print_result(self, message: str, color: str = COLOR_DEFAULT) -> None:
+        print()
+        print(f'{color}{message}{COLOR_DEFAULT}')
+        print()
+    
+    def _print_err(self, message: str) -> None:
+        self._print_result(message, COLOR_ERR)
+    
+    def _print_war(self, message: str) -> None:
+        self._print_result(message, COLOR_WAR)
 
-    def print_options(self) -> None:
+    def _print_options(self) -> None:
         print(f'Requests for {COLOR_CYA}{self.namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self.mode}{COLOR_DEFAULT} mode:')
         print()
         for i, name in enumerate(self.requests.keys()):
@@ -238,10 +251,25 @@ class Requester:
 
             print(f' > {option} => {url}')
         
-        self._print_quit_option()
+        self._print_extra_options()
+    
+    def _reload_data(self, print_info: bool) -> None:
+        self._load_namespace()
+        self._load_requests()
 
-    def request(self, number: str) -> None:
+        if print_info:
+            self._print_result('Data reloaded')
+
+    def _request(self, number: str) -> None:
         request_name = list(self.requests.keys())[number]
+
+        # Reload requests if liveReload is set to true
+        if 'liveReload' in self.settings and self.settings['liveReload']:
+            self._reload_data(print_info=False)
+            # Check if the selected request is still valid
+            if not request_name in self.requests:
+                self._print_war(f'Request \'{request_name}\' is no longer valid')
+                return
 
         response = self._send_request(request_name)
 
@@ -262,6 +290,34 @@ class Requester:
         print(f'Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{elapsed_ms:.1f} ms{COLOR_DEFAULT}')
         print(f'Response file: {file_path}')
         print()
+    
+    def run(self) -> None:
+        while True:
+            self._print_options()
+
+            request_number = input('> Request number: ')
+
+            if request_number == KEY_RELOAD:
+                self._reload_data(print_info=True)
+                continue
+
+            if request_number == KEY_QUIT:
+                quit()
+
+            if not request_number.isnumeric():
+                self._print_war('Not a number')
+                continue
+            
+            request_number = int(request_number)
+
+            if request_number < 0 or request_number >= len(self.requests):
+                self._print_war('Invalid request number')
+                continue
+
+            try:
+                self._request(request_number)
+            except ConnectionError as err:
+                self._print_err(f'REQUEST FAILED WITH A CONNECTION ERROR:\n{err}')
 
 
 def load_settings() -> dict:
@@ -274,30 +330,7 @@ def main() -> None:
 
     requester = Requester(settings)
 
-    while True:
-        requester.print_options()
-
-        request_number = input('> Request number: ')
-
-        if request_number == 'q':
-            break
-
-        if not request_number.isnumeric():
-            print(f'{COLOR_WAR}Not a number{COLOR_DEFAULT}')
-            continue
-        
-        request_number = int(request_number)
-
-        if request_number < 0 or request_number >= len(requester.requests):
-            print(f'{COLOR_WAR}Invalid request number{COLOR_DEFAULT}')
-            continue
-
-        try:
-            requester.request(request_number)
-        except ConnectionError as err:
-            print()
-            print(f'{COLOR_ERR}REQUEST FAILED WITH A CONNECTION ERROR:{COLOR_DEFAULT}')
-            print(err)
+    requester.run()
 
 
 if __name__ == '__main__':

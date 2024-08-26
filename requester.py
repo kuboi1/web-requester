@@ -142,6 +142,8 @@ class Requester:
             case 'PUT':
                 config['json'] = request['body'] if 'body' in request else None
                 response = requests.put(**config)
+            case 'OPTIONS':
+                response = requests.options(**config)
             case _:
                 self._print_err(f'Unsupported method \'{method}\'')
                 exit()

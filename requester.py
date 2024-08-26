@@ -117,44 +117,31 @@ class Requester:
         target_link = f'{self._url}/{request["endpoint"]}'
         method = request['method']
 
-        headers = request['headers'] if 'headers' in request else None
         id = request['id'] if 'id' in request else None
-        params = request['parameters'] if 'parameters' in request else None
-        body = request['body'] if 'body' in request else None
         basicAuth = request['basicAuth'] if 'basicAuth' in request else None
 
-        # Send the request
-        target_link = f'{target_link}/{id}' if id is not None else target_link
+        config = {
+            'url':      f'{target_link}/{id}' if id is not None else target_link,
+            'params':   request['parameters'] if 'parameters' in request else None,
+            'headers':  request['headers'] if 'headers' in request else None,
+            'auth':     HTTPBasicAuth(basicAuth['username'], basicAuth['password']) if basicAuth is not None else None
+        }
 
-        url_params = '?' + '&'.join([f'{key}={params[key]}' for key in params]) if params != None else ''
+        # Send the request
+        url_params = '?' + '&'.join([f'{key}={config["params"][key]}' for key in config["params"]]) if config["params"] != None else ''
 
         print()
-        print(f'Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {target_link}{url_params}...')
+        print(f'Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {config["url"]}{url_params}...')
 
         match method:
             case 'GET':
-                response = requests.get(
-                    target_link, 
-                    params=params,
-                    headers=headers,
-                    auth=HTTPBasicAuth(basicAuth['username'], basicAuth['password']) if basicAuth is not None else None
-                )
+                response = requests.get(**config)
             case 'POST':
-                response = requests.post(
-                    target_link, 
-                    params=params, 
-                    headers=headers,
-                    json=body, 
-                    auth=HTTPBasicAuth(basicAuth['username'], basicAuth['password']) if basicAuth is not None else None
-                )
+                config['json'] = request['body'] if 'body' in request else None
+                response = requests.post(**config)
             case 'PUT':
-                response = requests.put(
-                    target_link, 
-                    params=params, 
-                    headers=headers,
-                    json=body, 
-                    auth=HTTPBasicAuth(basicAuth['username'], basicAuth['password']) if basicAuth is not None else None
-                )
+                config['json'] = request['body'] if 'body' in request else None
+                response = requests.put(**config)
             case _:
                 self._print_err(f'Unsupported method \'{method}\'')
                 exit()

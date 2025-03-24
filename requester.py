@@ -117,11 +117,12 @@ class Requester:
         target_link = f'{self._url}/{request["endpoint"]}'
         method = request['method']
 
+        action = request['action'] if 'action' in request else None
         id = request['id'] if 'id' in request else None
         basicAuth = request['basicAuth'] if 'basicAuth' in request else None
 
         config = {
-            'url':      f'{target_link}/{id}' if id is not None else target_link,
+            'url':      f'{target_link}{f"/{action}" if action is not None else ""}{f"/{id}" if id is not None else ""}',
             'params':   request['parameters'] if 'parameters' in request else None,
             'headers':  request['headers'] if 'headers' in request else None,
             'auth':     HTTPBasicAuth(basicAuth['username'], basicAuth['password']) if basicAuth is not None else None
@@ -197,9 +198,7 @@ class Requester:
                 request[key] = self._common[key]
                 continue
 
-            for subkey in self._common[key]:
-                if subkey not in request[key]:
-                    request[key][subkey] = self._common[key][subkey]
+            request[key] = self._common[key] | request[key]
         
         return request
 
@@ -233,10 +232,11 @@ class Requester:
         for i, name in enumerate(self._requests.keys()):
             method = self._requests[name]['method']
             endpoint = self._requests[name]['endpoint']
+            action = self._requests[name]['action'] if 'action' in self._requests[name] else None
             id = self._requests[name]['id'] if 'id' in self._requests[name] else None
 
             option = f'{i}\t{COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{name}{COLOR_DEFAULT}'
-            url = f'{self._url}/{endpoint}{f"/{id}" if id is not None else ""}'
+            url = f'{self._url}/{endpoint}{f"/{action}" if action is not None else ""}{f"/{id}" if id is not None else ""}'
 
             print(f' > {option} => {url}')
         

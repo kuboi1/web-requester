@@ -143,6 +143,9 @@ class Requester:
             case 'PUT':
                 config['json'] = request['body'] if 'body' in request else None
                 response = requests.put(**config)
+            case 'PATCH':
+                config['json'] = request['body'] if 'body' in request else None
+                response = requests.patch(**config)
             case 'OPTIONS':
                 response = requests.options(**config)
             case _:

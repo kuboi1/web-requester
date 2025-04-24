@@ -32,7 +32,7 @@ class Requester:
     _common: dict
 
     def __init__(self, settings: dict) -> None:
-        self._print_intro()
+        self._print_banner()
 
         self._settings = settings
 
@@ -133,7 +133,7 @@ class Requester:
         url_params = '?' + '&'.join([f'{key}={config["params"][key]}' for key in config["params"]]) if config["params"] != None else ''
 
         print()
-        print(f'📡 Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {config["url"]}{url_params}...')
+        print(f'|----<\t📡 Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {config["url"]}{url_params}...')
 
         match method:
             case 'GET':
@@ -206,46 +206,38 @@ class Requester:
         
         return request
 
-    def _print_intro(self) -> None:
-        print(
-            r'''
- __          __  _       _____                            _            
- \ \        / / | |     |  __ \                          | |           
-  \ \  /\  / /__| |__   | |__) |___  __ _ _   _  ___  ___| |_ ___ _ __ 
-   \ \/  \/ / _ \ '_ \  |  _  // _ \/ _` | | | |/ _ \/ __| __/ _ \ '__|
-    \  /\  /  __/ |_) | | | \ \  __/ (_| | |_| |  __/\__ \ ||  __/ |   
-     \/  \/ \___|_.__/  |_|  \_\___|\__, |\__,_|\___||___/\__\___|_|   
-                                       | |                             
-                                       |_|                            
-            '''
-        )
+    def _print_banner(self) -> None:
+        with open(os.path.join(BASE_PATH, 'banner.txt'), 'r') as f:
+            print(''.join(f.readlines()))
+            print()
     
     def _print_extra_options(self) -> None:
         print('>----')
         print(f'| > {KEY_RELOAD}\t🔄 {COLOR_MAG}RELOAD{COLOR_DEFAULT}')
         if self._namespace:
-            print(f'| > {KEY_CLEAN_RESPONSES}\t🧹 {COLOR_MAG}CLEAN RESPONSES{COLOR_DEFAULT}')
+            print(f'| > {KEY_CLEAN_RESPONSES}\t🧹 {COLOR_MAG}CLEAR RESPONSES{COLOR_DEFAULT}')
         print(f'| > {KEY_QUIT}\t👋 {COLOR_MAG}QUIT{COLOR_DEFAULT}')
         print(r'\----')
         print()
     
-    def _print_result(self, message: str, color: str = COLOR_DEFAULT) -> None:
+    def _print_status(self, message: str, color: str = COLOR_DEFAULT) -> None:
         print()
-        print(f'{color}{message}{COLOR_DEFAULT}')
+        print(f'|---->\t{color}{message}{COLOR_DEFAULT}')
         print()
     
     def _print_success(self, message: str) -> None:
-        self._print_result(f'✅ {message}', COLOR_OK)
+        self._print_status(f'✅ {message}', COLOR_OK)
 
     def _print_err(self, message: str) -> None:
-        self._print_result(f'❌ {message}', COLOR_ERR)
+        self._print_status(f'❌ {message}', COLOR_ERR)
     
     def _print_war(self, message: str) -> None:
-        self._print_result(f'⚠️  {message}', COLOR_WAR)
+        self._print_status(f'⚠️  {message}', COLOR_WAR)
 
     def _print_options(self) -> None:
-        print(f'       🧾 Requests for {COLOR_CYA}{self._namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self._mode}{COLOR_DEFAULT} mode:')
-        print('/----')
+        print()
+        print(f'/----< 🧾 Requests for {COLOR_CYA}{self._namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self._mode}{COLOR_DEFAULT} mode:')
+        print('|')
         for i, name in enumerate(self._requests.keys()):
             method = self._requests[name]['method']
             endpoint = self._requests[name]['endpoint']
@@ -264,7 +256,7 @@ class Requester:
         self._load_requests()
 
         if print_info:
-            self._print_result('Data reloaded')
+            self._print_status('🔄 Data reloaded', COLOR_CYA)
     
     def _clean_responses(self) -> None:
         dir_path = os.path.join(RESPONSES_PATH, self._namespace)
@@ -315,9 +307,9 @@ class Requester:
         elif elapsed_ms >= 5000:
             ms_color = COLOR_WAR
 
-        print()
-        print(f'{status_emoji} Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{elapsed_ms:.1f} ms{COLOR_DEFAULT}')
-        print(f'📄 Response file: {file_path}')
+        print('|-----')
+        print(f'|---->\t{status_emoji} Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{elapsed_ms:.1f} ms{COLOR_DEFAULT}')
+        print(f'|---->\t📄 Response file: {file_path}')
         print()
     
     def run(self) -> None:
@@ -335,7 +327,7 @@ class Requester:
                 continue
 
             if request_number == KEY_QUIT:
-                self._print_result('Thanks for requesting!👋', COLOR_CYA)
+                self._print_status('Thanks for requesting!👋', COLOR_CYA)
                 quit()
 
             if not request_number.isnumeric():

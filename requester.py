@@ -20,6 +20,7 @@ REQUESTS_PATH = os.path.join(BASE_PATH, 'requests')
 RESPONSES_PATH = os.path.join(BASE_PATH, 'responses')
 
 KEY_RELOAD = 'r'
+KEY_CLEAN_RESPONSES = 'c'
 KEY_QUIT = 'q'
 
 class Requester:
@@ -132,7 +133,7 @@ class Requester:
         url_params = '?' + '&'.join([f'{key}={config["params"][key]}' for key in config["params"]]) if config["params"] != None else ''
 
         print()
-        print(f'Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {config["url"]}{url_params}...')
+        print(f'📡 Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {config["url"]}{url_params}...')
 
         match method:
             case 'GET':
@@ -206,16 +207,26 @@ class Requester:
         return request
 
     def _print_intro(self) -> None:
-        print()
-        print('-------------------')
-        print('|  WEB REQUESTER  |')
-        print('-------------------')
-        print()
+        print(
+            r'''
+ __          __  _       _____                            _            
+ \ \        / / | |     |  __ \                          | |           
+  \ \  /\  / /__| |__   | |__) |___  __ _ _   _  ___  ___| |_ ___ _ __ 
+   \ \/  \/ / _ \ '_ \  |  _  // _ \/ _` | | | |/ _ \/ __| __/ _ \ '__|
+    \  /\  /  __/ |_) | | | \ \  __/ (_| | |_| |  __/\__ \ ||  __/ |   
+     \/  \/ \___|_.__/  |_|  \_\___|\__, |\__,_|\___||___/\__\___|_|   
+                                       | |                             
+                                       |_|                            
+            '''
+        )
     
     def _print_extra_options(self) -> None:
-        print()
-        print(f' > {KEY_RELOAD}\t{COLOR_MAG}RELOAD{COLOR_DEFAULT}')
-        print(f' > {KEY_QUIT}\t{COLOR_MAG}QUIT{COLOR_DEFAULT}')
+        print('>----')
+        print(f'| > {KEY_RELOAD}\t🔄 {COLOR_MAG}RELOAD{COLOR_DEFAULT}')
+        if self._namespace:
+            print(f'| > {KEY_CLEAN_RESPONSES}\t🧹 {COLOR_MAG}CLEAN RESPONSES{COLOR_DEFAULT}')
+        print(f'| > {KEY_QUIT}\t👋 {COLOR_MAG}QUIT{COLOR_DEFAULT}')
+        print(r'\----')
         print()
     
     def _print_result(self, message: str, color: str = COLOR_DEFAULT) -> None:
@@ -223,25 +234,28 @@ class Requester:
         print(f'{color}{message}{COLOR_DEFAULT}')
         print()
     
+    def _print_success(self, message: str) -> None:
+        self._print_result(f'✅ {message}', COLOR_OK)
+
     def _print_err(self, message: str) -> None:
-        self._print_result(message, COLOR_ERR)
+        self._print_result(f'❌ {message}', COLOR_ERR)
     
     def _print_war(self, message: str) -> None:
-        self._print_result(message, COLOR_WAR)
+        self._print_result(f'⚠️  {message}', COLOR_WAR)
 
     def _print_options(self) -> None:
-        print(f'Requests for {COLOR_CYA}{self._namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self._mode}{COLOR_DEFAULT} mode:')
-        print()
+        print(f'       🧾 Requests for {COLOR_CYA}{self._namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self._mode}{COLOR_DEFAULT} mode:')
+        print('/----')
         for i, name in enumerate(self._requests.keys()):
             method = self._requests[name]['method']
             endpoint = self._requests[name]['endpoint']
             action = self._requests[name]['action'] if 'action' in self._requests[name] else None
             id = self._requests[name]['id'] if 'id' in self._requests[name] else None
 
-            option = f'{i}\t{COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{name}{COLOR_DEFAULT}'
+            option = f'{i}\t{COLOR_MAG}{method}{COLOR_DEFAULT}\t{COLOR_CYA}{name}{COLOR_DEFAULT}'
             url = f'{self._url}/{endpoint}{f"/{action}" if action is not None else ""}{f"/{id}" if id is not None else ""}'
 
-            print(f' > {option} => {url}')
+            print(f'| > {option} => {url}')
         
         self._print_extra_options()
     
@@ -251,6 +265,27 @@ class Requester:
 
         if print_info:
             self._print_result('Data reloaded')
+    
+    def _clean_responses(self) -> None:
+        dir_path = os.path.join(RESPONSES_PATH, self._namespace)
+
+        if not os.path.exists(dir_path):
+            self._print_war(f'Responses directory for \'{self._namespace}\' not yet created')
+            return
+        
+        dir_files = os.listdir(dir_path)
+
+        if len(dir_files) == 0:
+            self._print_success(f'Directory \'responses/{self._namespace}\' is already empty')
+            return
+        
+        removed = 0
+
+        for f in dir_files:
+            os.remove(os.path.join(dir_path, f))
+            removed += 1
+        
+        self._print_success(f'Cleared directory \'responses/{self._namespace}\' (deleted {removed} files)')
 
     def _request(self, number: str) -> None:
         request_name = list(self._requests.keys())[number]
@@ -271,6 +306,7 @@ class Requester:
         reason = response.reason
         elapsed_ms = response.elapsed.total_seconds() * 1000
 
+        status_emoji = '✅' if response.ok else '❌'
         status_color = COLOR_OK if response.ok else COLOR_ERR
         ms_color = COLOR_OK
 
@@ -280,8 +316,8 @@ class Requester:
             ms_color = COLOR_WAR
 
         print()
-        print(f'Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{elapsed_ms:.1f} ms{COLOR_DEFAULT}')
-        print(f'Response file: {file_path}')
+        print(f'{status_emoji} Response returned with {status_color}{status} ({reason}) {COLOR_DEFAULT}in {ms_color}{elapsed_ms:.1f} ms{COLOR_DEFAULT}')
+        print(f'📄 Response file: {file_path}')
         print()
     
     def run(self) -> None:
@@ -294,7 +330,12 @@ class Requester:
                 self._reload_data(print_info=True)
                 continue
 
+            if request_number == KEY_CLEAN_RESPONSES:
+                self._clean_responses()
+                continue
+
             if request_number == KEY_QUIT:
+                self._print_result('Thanks for requesting!👋', COLOR_CYA)
                 quit()
 
             if not request_number.isnumeric():

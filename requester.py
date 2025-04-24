@@ -355,7 +355,7 @@ class Requester:
 
 
 def load_settings() -> dict:
-    with open('settings.json', 'r', encoding='utf-8') as requests_f:
+    with open(os.path.join(BASE_PATH, 'settings.json'), 'r', encoding='utf-8') as requests_f:
         return json.load(requests_f)
 
 

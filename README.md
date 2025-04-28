@@ -4,6 +4,12 @@
 
 * Sends HTTP requests to specified endpoints on the web
 
+### 🚀 Quick Start
+* Open console
+* Move into the web-requester directory `cd /path/to/web-requester`
+* Make sure you have the *requests* python package installed `pip install requests`
+* Run the app using `python requester.py`
+
 ### 🧾 Requests
 * Requests are specified in the **requests/** directory
 * Requests are seperated into **namespaces**
@@ -25,7 +31,7 @@
     * *contentOnly* [optional|default: false] - Specifies if the status, reason and headers of the response should be saved or just the body content (Works for *.json* responses only)
     * *liveReload* [optional|default: false] - Specifies if the requests file should be reloaded on each request sent. This allows for editing the requests in the json file without restarting the program (might cause some slight performance issues with large json files)
 
-### 🚀 Actions
+### ⚡ Actions
 * 📡 **Request number** (eg. 1) - Sends the request corresponding to that number
 * 🔄 **RELOAD** - Reloads the requests file, loading any changes made while the app was running
 * 🧹 **CLEAR RESPONSES** - Clears the *responses/{namespace}* directory

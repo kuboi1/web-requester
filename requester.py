@@ -135,18 +135,22 @@ class Requester:
         print()
         print(f'|----<\t📡 Sending {COLOR_MAG}{method}{COLOR_DEFAULT} {COLOR_CYA}{request_name}{COLOR_DEFAULT} request to: {config["url"]}{url_params}...')
 
+        if self._request_needs_body(method):
+            config['json'] = request['body'] if 'body' in request else None
+
         match method:
             case 'GET':
                 response = requests.get(**config)
             case 'POST':
-                config['json'] = request['body'] if 'body' in request else None
                 response = requests.post(**config)
             case 'PUT':
-                config['json'] = request['body'] if 'body' in request else None
                 response = requests.put(**config)
+            case 'DELETE':
+                response = requests.delete(**config)
             case 'PATCH':
-                config['json'] = request['body'] if 'body' in request else None
                 response = requests.patch(**config)
+            case 'HEAD':
+                response = requests.head(**config)
             case 'OPTIONS':
                 response = requests.options(**config)
             case _:
@@ -205,6 +209,9 @@ class Requester:
             request[key] = self._common[key] | request[key]
         
         return request
+
+    def _request_needs_body(self, method: str) -> bool:
+        return method in ['POST', 'PUT', 'PATCH']
 
     def _print_banner(self) -> None:
         with open(os.path.join(BASE_PATH, 'banner.txt'), 'r') as f:

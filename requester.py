@@ -2,6 +2,7 @@ import requests
 import time
 import json
 import os
+import sys
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
@@ -30,6 +31,8 @@ class Requester:
     _settings: dict
     _requests: dict
     _common: dict
+
+    _printed_options_lines: int = 0
 
     def __init__(self, settings: dict) -> None:
         self._print_banner()
@@ -223,9 +226,13 @@ class Requester:
         print(f'| > {KEY_RELOAD}\t🔄 {COLOR_MAG}RELOAD{COLOR_DEFAULT}')
         if self._namespace:
             print(f'| > {KEY_CLEAN_RESPONSES}\t🧹 {COLOR_MAG}CLEAR RESPONSES{COLOR_DEFAULT}')
+            self._printed_options_lines += 1
         print(f'| > {KEY_QUIT}\t👋 {COLOR_MAG}QUIT{COLOR_DEFAULT}')
         print(r'\----')
         print()
+
+        # Visual lines and extra options
+        self._printed_options_lines += 5
     
     def _print_status(self, message: str, color: str = COLOR_DEFAULT) -> None:
         print()
@@ -256,7 +263,20 @@ class Requester:
 
             print(f'| > {option} => {url}')
         
+        # 3 header lines + options
+        self._printed_options_lines += 3 + len(self._requests)
+        
         self._print_extra_options()
+    
+    def _clear_options_lines(self) -> None:
+        # Add 1 line for the input
+        self._clear_lines(self._printed_options_lines + 1)
+        self._printed_options_lines = 0
+
+    def _clear_lines(self, count: int) -> None:
+        for _ in range(count):
+            sys.stdout.write('\033[F\033[K')
+        sys.stdout.flush()
     
     def _reload_data(self, print_info: bool) -> None:
         self._load_namespace()
@@ -324,6 +344,8 @@ class Requester:
             self._print_options()
 
             request_number = input('> Request number: ')
+
+            self._clear_options_lines()
 
             if request_number == KEY_RELOAD:
                 self._reload_data(print_info=True)

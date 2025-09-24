@@ -12,8 +12,10 @@ from datetime import datetime
 COLOR_OK = '\033[32m'       # Green
 COLOR_ERR = '\033[31m'      # Red
 COLOR_WAR = '\033[33m'      # Yellow
+COLOR_PUR = '\033[35m'      # Purple
+COLOR_BLU = '\033[94m'      # Blue
 COLOR_MAG = '\033[95m'      # Magenta
-COLOR_CYA = '\033[96m'     # Cyan
+COLOR_CYA = '\033[96m'      # Cyan
 COLOR_DEFAULT = '\033[0m'   # White (reset)
 
 BASE_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -223,11 +225,11 @@ class Requester:
     
     def _print_extra_options(self) -> None:
         print('>----')
-        print(f'| > {KEY_RELOAD}\t🔄 {COLOR_MAG}RELOAD{COLOR_DEFAULT}')
+        print(f'| > {KEY_RELOAD}\t🔄 {COLOR_BLU}RELOAD{COLOR_DEFAULT}')
         if self._namespace:
-            print(f'| > {KEY_CLEAN_RESPONSES}\t🧹 {COLOR_MAG}CLEAR RESPONSES{COLOR_DEFAULT}')
+            print(f'| > {KEY_CLEAN_RESPONSES}\t🧹 {COLOR_BLU}CLEAR RESPONSES{COLOR_DEFAULT}')
             self._printed_options_lines += 1
-        print(f'| > {KEY_QUIT}\t👋 {COLOR_MAG}QUIT{COLOR_DEFAULT}')
+        print(f'| > {KEY_QUIT}\t👋 {COLOR_BLU}QUIT{COLOR_DEFAULT}')
         print(r'\----')
         print()
 
@@ -250,7 +252,7 @@ class Requester:
 
     def _print_options(self) -> None:
         print()
-        print(f'/----< 🧾 Requests for {COLOR_CYA}{self._namespace}{COLOR_DEFAULT} in {COLOR_MAG}{self._mode}{COLOR_DEFAULT} mode:')
+        print(f'/----<\t🧾 Requests for {COLOR_BLU}{self._namespace}{COLOR_DEFAULT} in {COLOR_PUR}{self._mode}{COLOR_DEFAULT} mode:')
         print('|')
         for i, name in enumerate(self._requests.keys()):
             method = self._requests[name]['method']
@@ -261,7 +263,7 @@ class Requester:
             option = f'{i}\t{COLOR_MAG}{method}{COLOR_DEFAULT}\t{COLOR_CYA}{name}{COLOR_DEFAULT}'
             url = f'{self._url}/{endpoint}{f"/{action}" if action is not None else ""}{f"/{id}" if id is not None else ""}'
 
-            print(f'| > {option} => {url}')
+            print(f'| > {option} → {url}')
         
         # 3 header lines + options
         self._printed_options_lines += 3 + len(self._requests)
@@ -283,7 +285,7 @@ class Requester:
         self._load_requests()
 
         if print_info:
-            self._print_status('🔄 Data reloaded', COLOR_CYA)
+            self._print_status('🔄 Data reloaded', COLOR_OK)
     
     def _clean_responses(self) -> None:
         dir_path = os.path.join(RESPONSES_PATH, self._namespace)
@@ -343,7 +345,7 @@ class Requester:
         while True:
             self._print_options()
 
-            request_number = input('> Request number: ')
+            request_number = input('> Choose request: ')
 
             self._clear_options_lines()
 
@@ -356,7 +358,7 @@ class Requester:
                 continue
 
             if request_number == KEY_QUIT:
-                self._print_status('Thanks for requesting!👋', COLOR_CYA)
+                self._print_status('Thanks for requesting!👋', COLOR_BLU)
                 quit()
 
             if not request_number.isnumeric():

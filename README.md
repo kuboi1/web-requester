@@ -20,7 +20,7 @@
 
 ### 📄 Responses
 * Requester currently supports *.json* and *.pdf* responses
-* Responses are saved into the **responses/*{namespace}*** directory in *{request_name}\_{datetime}.{ext}* format
+* Responses are saved into the **responses/*{namespace}*** directory in *{request_name}-{status}\_\_{datetime}.{extension}* format
 
 ### ⚙️ Settings
 * Settings are specified in the **settings.json** file

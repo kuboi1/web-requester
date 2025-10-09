@@ -182,17 +182,20 @@ class Requester:
                     response_f.write(response.content)
             case _:
                 file_path = os.path.join(dir_path, f'{file_name}.json')
-                response_data = self._create_json_response_data(response)
+                response_data = self._create_json_response_data(response, content_type)
                 with open(file_path, 'w') as response_f:
                     json.dump(response_data, response_f)
         
         return file_path
     
-    def _create_json_response_data(self, response: Response) -> dict:
-        try:
-            response_content = response.json()
-        except requests.exceptions.JSONDecodeError:
-            self._print_war(f'Failed to json decode response content - using raw content instead')
+    def _create_json_response_data(self, response: Response, content_type: str) -> dict:
+        if 'json' in content_type:
+            try:
+                response_content = response.json()
+            except requests.exceptions.JSONDecodeError:
+                self._print_war(f'Failed to json decode response content - using raw content instead')
+                response_content = response.text
+        else:
             response_content = response.text
 
         if 'contentOnly' in self._settings and self._settings['contentOnly']:

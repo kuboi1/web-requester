@@ -168,7 +168,7 @@ class Requester:
         content_type = response.headers['Content-Type']
         datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-        file_name = f'{request_name}_{datetime_str}'
+        file_name = f'{request_name}-{"OK" if response.ok else "ERR"}__{datetime_str}'
 
         # Create a response directory for the namespace if not exist
         dir_path = (os.path.join(RESPONSES_PATH, self._namespace))

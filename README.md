@@ -5,10 +5,16 @@
 * Sends HTTP requests to specified endpoints on the web
 
 ### 🚀 Quick Start
-* Open console
-* Move into the web-requester directory `cd /path/to/web-requester`
-* Make sure you have the *requests* python package installed `pip install requests`
-* Run the app using `python requester.py`
+* Run using poetry (preffered)
+    1. Open console
+    2. Move into the web-requester directory `cd /path/to/web-requester`
+    3. Install dependencies `poetry install`
+    4. Run the app `poetry run python requester.py`
+* Run without poetry (alternative)
+    1. Open console
+    2. Move into the web-requester directory `cd /path/to/web-requester`
+    3. Install the requests package `pip install requests`
+    4. Run the app using `python requester.py`
 
 ### 🧾 Requests
 * Requests are specified in the **requests/** directory
@@ -39,4 +45,4 @@
 
 ## 🔗 Dependencies
 * **[Python 3.10+](https://www.python.org/downloads/)**
-* **[requests](https://pypi.org/project/requests/)** Python package (`pip install requests`)
+* **[Poetry](https://python-poetry.org/)** for dependency management or the **[requests](https://pypi.org/project/requests/)** Python package directly

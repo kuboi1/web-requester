@@ -1,0 +1,21 @@
+[project]
+name = "web-requester"
+version = "1.0.0"
+description = "Send HTTP requests with ease"
+authors = [
+    {name = "Jakub Zedník",email = "91053389+kuboi1@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests (>=2.32.5,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry]
+package-mode = false

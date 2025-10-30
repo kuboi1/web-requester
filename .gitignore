@@ -1,3 +1,4 @@
+poetry.lock
 response.json
 settings.json
 requests/*
